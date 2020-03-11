@@ -1,13 +1,33 @@
-self.addEventListener('install', function(event){
-    console.log('[Service Worker] Installing Service Worker...', event);
-})
 
-self.addEventListener('activate', function(event){
-    console.log('[Service Worker] Activating Service Worker...', event);
-    return self.clients.claim(); //if fails to activate
-})
+self.addEventListener('install', function(event) {
+  console.log('[Service Worker] Installing Service Worker ...', event);
+
+  event.waitUntil(
+    caches.open('static')
+    .then(function(cache) {
+      console.log('[Service Worker] Precaching App shell');
+      cache.add('/');
+      cache.add('/index.html');
+      cache.add('/src/js/app.js');
+    })
+  )
+});
+
+self.addEventListener('activate', function(event) {
+  // console.log('[Service Worker] Activating Service Worker ....', event);
+  return self.clients.claim();  // if activate fails
+});
+
 
 self.addEventListener('fetch', function(event){
-    console.log('[Service Worker] Fetching something...', event);
-    event.respondWith(fetch(event.request));  //response to fetch event
+  event.respondWith(
+    caches.match(event.request)
+    .then(function(response){
+      if(response){
+        return response;
+      } else{
+        return fetch(event.request);
+      }
+    })
+  )
 })
